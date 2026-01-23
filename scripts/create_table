@@ -1,0 +1,117 @@
+DROP TABLE IF EXISTS dbo.Sales;
+
+CREATE TABLE dbo.Sales
+(
+    OrderDate              DATE            NOT NULL,
+    OrderDate_Key          INT             NOT NULL,   -- ex: 20260120
+    ProductKey             INT             NOT NULL,
+    CustomerKey            INT             NOT NULL,
+    SalesTerritoryKey      INT             NOT NULL,
+    SalesOrderNumber       NVARCHAR(25)     NOT NULL,
+    ShipDate               DATE            NULL,
+    SalesOrderLineNumber   INT             NOT NULL,
+    OrderQuantity          INT             NOT NULL,
+    UnitPrice              MONEY           NOT NULL,
+    ExtendedAmount         MONEY           NOT NULL,
+    UnitPriceDiscountPct   DECIMAL(5,4)     NOT NULL,   -- ex: 0.1500 = 15 %
+    DiscountAmount         MONEY           NOT NULL,
+    ProductStandardCost    MONEY           NOT NULL,
+    TotalProductCost       MONEY           NOT NULL,
+    SalesAmount            MONEY           NOT NULL,
+    TaxAmt                 MONEY           NOT NULL,
+    Freight                MONEY           NOT NULL,
+    RegionMonthID          NVARCHAR(25)         NOT NULL
+);
+GO
+
+
+
+
+ALTER TABLE dbo.Sales
+ADD CONSTRAINT PK_Sales
+PRIMARY KEY
+(
+    SalesOrderNumber,
+    SalesOrderLineNumber
+);
+
+ALTER TABLE dbo.Sales
+ADD CONSTRAINT CK_Sales_OrderQuantity
+CHECK (OrderQuantity > 0);
+
+ALTER TABLE dbo.Sales
+ADD CONSTRAINT CK_Sales_Amounts_Positive
+CHECK
+(
+    UnitPrice >= 0
+    AND ExtendedAmount >= 0
+    AND DiscountAmount >= 0
+    AND ProductStandardCost >= 0
+    AND TotalProductCost >= 0
+    AND SalesAmount >= 0
+    AND TaxAmt >= 0
+    AND Freight >= 0
+);
+
+ALTER TABLE dbo.Sales
+ADD CONSTRAINT CK_Sales_DiscountPct
+CHECK (UnitPriceDiscountPct BETWEEN 0 AND 1);
+
+ALTER TABLE dbo.Sales
+ADD CONSTRAINT CK_Sales_ShipDate
+CHECK (ShipDate IS NULL OR ShipDate >= OrderDate);
+
+DROP TABLE IF EXISTS dbo.Product;
+CREATE TABLE dbo.Product (
+    ProductKey              INT             NOT NULL,
+    ProductSubcategoryKey   INT            NULL,
+    ProductName             NVARCHAR(150)   NULL,
+    StandardCost            MONEY            NULL,
+    Color                   NVARCHAR(30)    NULL,
+    SafetyStockLevel        INT             NULL,
+    ListPrice               MONEY            NULL,
+    Size                    NVARCHAR(20)    NULL,
+    SizeRange               NVARCHAR(50)    NULL,
+    [Weight]                 DECIMAL(8,2)    NULL,
+    DaysToManufacture       INT             NULL,
+    ProductLine             NVARCHAR(10)    NULL,
+    DealerPrice             MONEY           NULL,
+    Class                   NVARCHAR(10)    NULL,
+    ModelName               NVARCHAR(100)   NULL,
+    [Description]           NVARCHAR(MAX)   NULL,
+    [Status]                NVARCHAR(20)    NULL,
+    SubCategory             NVARCHAR(100)   NULL,
+    Category                NVARCHAR(100)   NULL,
+    StartDate               DATE            NULL,
+    EndDate                 DATE            NULL,
+
+    CONSTRAINT PK_Product PRIMARY KEY (ProductKey)
+);
+
+DROP TABLE IF EXISTS dbo.Calendar;
+CREATE TABLE dbo.Calendar (
+    ID INT NOT NULL PRIMARY KEY,
+    [Date] DATE NOT NULL,
+
+    DayNumberOfWeek INT NOT NULL,
+    DayName NVARCHAR(20) NOT NULL,
+
+    MonthName NVARCHAR(20) NOT NULL,
+    MonthNumberOfYear INT NOT NULL,
+
+    DayNumberOfYear INT NOT NULL,
+    WeekNumberOfYear INT NOT NULL,
+
+    CalendarQuarter INT NOT NULL,
+    CalendarYear INT NOT NULL,
+
+    FiscalYear INT NOT NULL,
+    FiscalSemester INT NOT NULL,
+    FiscalQuarter INT NOT NULL,
+
+    FinMonthNumberOfYear INT NOT NULL,
+    DayNumberOfMonth INT NOT NULL,
+
+    Period INT NOT NULL,
+    MonthID INT NOT NULL
+);
