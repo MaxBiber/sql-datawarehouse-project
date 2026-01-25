@@ -1,0 +1,64 @@
+USE [BD_Retail_Sales]
+GO
+/****** Object:  StoredProcedure [dbo].[load_data]    Script Date: 26/01/2026 00:33:51 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER   PROCEDURE [dbo].[load_data] AS
+BEGIN
+	PRINT '==========================='
+	PRINT 'Loading Table'
+	PRINT '==========================='
+
+	PRINT '---------------------------'
+	PRINT 'Loading Sales Table'
+	PRINT '---------------------------'
+
+	TRUNCATE TABLE dbo.Sales;
+	BULK INSERT dbo.Sales
+	FROM 'C:\Users\BIBER\Desktop\Sales.csv'
+	WITH (
+		FIRSTROW = 2,
+		FIELDTERMINATOR = ';',
+		ROWTERMINATOR = '\n',
+		CODEPAGE = '65001',
+		TABLOCK
+	);
+
+	PRINT '---------------------------'
+	PRINT 'Loading Product Table'
+	PRINT '---------------------------'
+	TRUNCATE TABLE dbo.[Product]
+	BULK INSERT dbo.[Product]
+	FROM 'C:\Users\BIBER\Desktop\Product.txt'
+	WITH (
+		FIELDTERMINATOR = '\t',
+		ROWTERMINATOR = '\n',
+		FIRSTROW = 2
+		);
+
+	PRINT '---------------------------'
+	PRINT 'Loading Calendar Table'
+	PRINT '---------------------------'
+	TRUNCATE TABLE dbo.Calendar;
+	BULK INSERT dbo.Calendar
+	FROM 'C:\Users\BIBER\Desktop\Calendar.txt'
+	WITH (
+		FIELDTERMINATOR = '\t',
+		ROWTERMINATOR = '\n',
+		FIRSTROW = 2
+		);
+
+		PRINT '---------------------------'
+	PRINT 'Loading Territory Table'
+	PRINT '---------------------------'
+	TRUNCATE TABLE dbo.Territory;
+	BULK INSERT dbo.Territory
+	FROM 'C:\Users\BIBER\Desktop\Territory.txt'
+	WITH (
+		FIELDTERMINATOR = '\t',
+		ROWTERMINATOR = '\n',
+		FIRSTROW = 2
+		);
+END
