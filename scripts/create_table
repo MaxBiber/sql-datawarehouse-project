@@ -115,3 +115,25 @@ CREATE TABLE dbo.Calendar (
     Period INT NOT NULL,
     MonthID INT NOT NULL
 );
+
+CREATE TABLE [dbo].[SupplyChainData](
+	[OrderDate] [date] NULL,
+	[Region] [nvarchar](50) NULL,
+	[Category] [nvarchar](50) NULL,
+	[Supplier] [nvarchar](50) NULL,
+	[Warehouse] [nvarchar](50) NULL,
+	[OrderStatus] [nvarchar](20) NULL,
+	[UnitsSold] [int] NULL,
+	[InventoryLevel] [int] NULL,
+	[TransportationCost] [decimal](12, 2) NULL,
+	[OrderAccuracy] [nvarchar](5) NULL,
+	[LeadTimeDays] [int] NULL,
+	[Backorder] [nvarchar](5) NULL,
+	[COGS] [decimal](14, 2) NULL,
+	[AverageInventory] [decimal](10, 2) NULL,
+	[WarehouseCapacity] [int] NULL
+) ON [PRIMARY]
+GO
+
+
+
