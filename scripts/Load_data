@@ -61,4 +61,15 @@ BEGIN
 		ROWTERMINATOR = '\n',
 		FIRSTROW = 2
 		);
+	PRINT '---------------------------'
+	PRINT 'Loading SupplyChain Table'
+	PRINT '---------------------------'
+	TRUNCATE TABLE dbo.SupplyChainData;
+	BULK INSERT dbo.SupplyChainData
+	FROM 'C:\Users\BIBER\Desktop\adventure_works_supply_chain.txt'
+	WITH (
+		FIELDTERMINATOR = '\t',
+		ROWTERMINATOR = '\n',
+		FIRSTROW = 2
+		);
 END
