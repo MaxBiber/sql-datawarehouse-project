@@ -2,6 +2,6 @@
 
 USE master
 
-CREATE DATABASE BD_Retail_Sales;
+CREATE DATABASE SQL_DataWarehouse;
 
-USE BD_Retail_Sales;
+USE SQL_DataWarehouse;
