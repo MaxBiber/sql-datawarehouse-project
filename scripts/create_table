@@ -135,5 +135,41 @@ CREATE TABLE [dbo].[SupplyChainData](
 ) ON [PRIMARY]
 GO
 
+CREATE TABLE dbo.dim_customer
+(
+    customer_sk    INT           IDENTITY(1,1) NOT NULL
+        CONSTRAINT PK_dim_customer PRIMARY KEY,
+    customer_id    INT           NOT NULL,
+    customer_name  NVARCHAR(100) NOT NULL,
+
+    -- Attributs suivis par SCD2
+    segment        NVARCHAR(50)  NOT NULL,
+    region         NVARCHAR(50)  NOT NULL,
+    credit_limit   DECIMAL(12,2) NOT NULL,
+    city           NVARCHAR(100) NULL,
+    country        NVARCHAR(50)  NULL,
+
+    -- Colonnes SCD2 MÉTIER (pour les jointures analytiques)
+    valid_from     DATE          NOT NULL,
+    valid_to       DATE          NOT NULL  CONSTRAINT DF_dim_customer_validto
+                   DEFAULT '9999-12-31',
+    is_current     BIT           NOT NULL  CONSTRAINT DF_dim_customer_iscurrent
+                   DEFAULT 1,
+
+    -- Colonnes SYSTÈME (audit technique automatique, HIDDEN)
+    sys_start      DATETIME2(0)
+        GENERATED ALWAYS AS ROW START HIDDEN NOT NULL,
+    sys_end        DATETIME2(0)
+        GENERATED ALWAYS AS ROW END   HIDDEN NOT NULL,
+    PERIOD FOR SYSTEM_TIME (sys_start, sys_end)
+)
+WITH (
+    SYSTEM_VERSIONING = ON (
+        HISTORY_TABLE            = dbo.dim_customer_history,
+        HISTORY_RETENTION_PERIOD = 7 YEARS
+    )
+);
+
+
 
 
