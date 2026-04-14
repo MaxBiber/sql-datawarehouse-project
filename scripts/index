@@ -1,4 +1,0 @@
-
--- Index sur customer_id + is_current (clé des jointures SCD2)
-CREATE INDEX IX_dim_customer_id_current
-    ON dbo.dim_customer (customer_id, is_current);
