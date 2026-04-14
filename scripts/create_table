@@ -170,6 +170,17 @@ WITH (
     )
 );
 
-
-
+CREATE TABLE dbo.stg_customer_updates (
+    stg_id         INT           IDENTITY(1,1) PRIMARY KEY,
+    customer_id    INT           NOT NULL,
+    customer_name  NVARCHAR(100) NOT NULL,
+    segment        NVARCHAR(50),
+    region         NVARCHAR(50),
+    credit_limit   DECIMAL(12,2),
+    city           NVARCHAR(100),
+    country        NVARCHAR(50),
+    source_date    DATE          NOT NULL,
+    load_status    NVARCHAR(20)  DEFAULT 'PENDING',  -- PENDING/DONE/ERROR
+    loaded_at      DATETIME2     DEFAULT SYSUTCDATETIME()
+);
 
