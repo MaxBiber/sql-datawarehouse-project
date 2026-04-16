@@ -219,3 +219,30 @@ WITH (
     )
 );
 
+CREATE TABLE dbo.scd2_audit_log
+(
+    log_id         INT           IDENTITY(1,1) NOT NULL
+        CONSTRAINT PK_scd2_audit PRIMARY KEY,
+    customer_id    INT           NOT NULL,
+    old_sk         INT           NOT NULL,
+    new_sk         INT           NULL,
+    changed_cols   NVARCHAR(500) NULL,
+    old_segment    NVARCHAR(50)  NULL,
+    new_segment    NVARCHAR(50)  NULL,
+    old_region     NVARCHAR(50)  NULL,
+    new_region     NVARCHAR(50)  NULL,
+
+    -- Colonnes système
+    sys_start      DATETIME2(0)
+        GENERATED ALWAYS AS ROW START HIDDEN NOT NULL,
+    sys_end        DATETIME2(0)
+        GENERATED ALWAYS AS ROW END   HIDDEN NOT NULL,
+    PERIOD FOR SYSTEM_TIME (sys_start, sys_end)
+)
+WITH (
+    SYSTEM_VERSIONING = ON (
+        HISTORY_TABLE            = dbo.scd2_audit_log_history,
+        HISTORY_RETENTION_PERIOD = 7 YEARS
+    )
+);
+
