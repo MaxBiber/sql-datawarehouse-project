@@ -187,3 +187,35 @@ CREATE TABLE dbo.stg_customer_updates (
 -- Index sur customer_id + is_current (clé des jointures SCD2)
 CREATE INDEX IX_dim_customer_id_current
     ON dbo.dim_customer (customer_id, is_current);
+
+CREATE TABLE dbo.fact_orders
+(
+    order_sk          INT           IDENTITY(1,1) NOT NULL
+        CONSTRAINT PK_fact_orders PRIMARY KEY,
+    order_id          INT           NOT NULL,
+    customer_sk       INT           NOT NULL,
+    order_date        DATE          NOT NULL,
+    status            NVARCHAR(30)  NOT NULL,
+    amount            DECIMAL(12,2) NOT NULL,
+    product_category  NVARCHAR(50)  NULL,
+    payment_method    NVARCHAR(30)  NULL,
+    delivery_days     INT           NULL,
+
+    -- Colonnes système
+    sys_start         DATETIME2(0)
+        GENERATED ALWAYS AS ROW START HIDDEN NOT NULL,
+    sys_end           DATETIME2(0)
+        GENERATED ALWAYS AS ROW END   HIDDEN NOT NULL,
+    PERIOD FOR SYSTEM_TIME (sys_start, sys_end),
+
+    CONSTRAINT FK_orders_customer
+        FOREIGN KEY (customer_sk)
+        REFERENCES dbo.dim_customer (customer_sk)
+)
+WITH (
+    SYSTEM_VERSIONING = ON (
+        HISTORY_TABLE            = dbo.fact_orders_history,
+        HISTORY_RETENTION_PERIOD = 7 YEARS
+    )
+);
+
