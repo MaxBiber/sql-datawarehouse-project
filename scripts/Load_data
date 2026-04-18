@@ -73,3 +73,158 @@ BEGIN
 		FIRSTROW = 2
 		);
 END
+
+CREATE OR ALTER PROCEDURE dbo.usp_load_scd2_customer
+    @run_date DATE = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @today DATE = ISNULL(@run_date, CAST(GETDATE() AS DATE));
+
+    -- ── ÉTAPE 1 : Identifier les clients modifiés ────────────────
+    -- Comparaison staging PENDING vs dim courante (is_current=1)
+    DECLARE @changed TABLE (
+        customer_id     INT NOT NULL,
+        old_sk          INT NOT NULL,
+        source_date     DATE NOT NULL,
+        changed_cols    NVARCHAR(500),
+        old_segment     NVARCHAR(50),
+        new_segment     NVARCHAR(50),
+        old_region      NVARCHAR(50),
+        new_region      NVARCHAR(50),
+        old_credit      DECIMAL(12,2),
+        new_credit      DECIMAL(12,2)
+    );
+
+    DECLARE @new_clients TABLE (
+        customer_id    INT NOT NULL,
+        customer_name  NVARCHAR(100),
+        segment        NVARCHAR(50),
+        region         NVARCHAR(50),
+        credit_limit   DECIMAL(12,2),
+        city           NVARCHAR(100),
+        country        NVARCHAR(50),
+        source_date    DATE
+    );
+
+    -- Remplir @changed : clients existants avec des valeurs modifiées
+    INSERT INTO @changed
+    SELECT
+        s.customer_id,
+        d.customer_sk                      AS old_sk,
+        s.source_date,
+        CONCAT_WS(', ',
+            CASE WHEN ISNULL(d.segment,'')
+                      <> ISNULL(s.segment,'')
+                 THEN 'segment'     END,
+            CASE WHEN ISNULL(d.region,'')
+                      <> ISNULL(s.region,'')
+                 THEN 'region'      END,
+            CASE WHEN ISNULL(d.credit_limit,0)
+                      <> ISNULL(s.credit_limit,0)
+                 THEN 'credit_limit' END
+        )                                  AS changed_cols,
+        d.segment, s.segment,
+        d.region,  s.region,
+        d.credit_limit, s.credit_limit
+    FROM dbo.stg_customer_updates s
+    INNER JOIN dbo.dim_customer d
+        ON  d.customer_id = s.customer_id
+        AND d.is_current  = 1
+    WHERE s.load_status = 'PENDING'
+      AND (
+            ISNULL(d.segment,'')     <> ISNULL(s.segment,'')  OR
+            ISNULL(d.region,'')      <> ISNULL(s.region,'')   OR
+            ISNULL(d.credit_limit,0)  <> ISNULL(s.credit_limit,0)
+          );
+
+    -- Remplir @new_clients : introuvables dans la dim
+    INSERT INTO @new_clients
+    SELECT
+        s.customer_id, s.customer_name, s.segment,
+        s.region, s.credit_limit, s.city, s.country, s.source_date
+    FROM dbo.stg_customer_updates s
+    WHERE s.load_status = 'PENDING'
+      AND NOT EXISTS (
+            SELECT 1 FROM dbo.dim_customer d
+            WHERE  d.customer_id = s.customer_id
+      );
+
+    -- ── ÉTAPE 2 : Transaction atomique ──────────────────────────
+    BEGIN TRANSACTION;
+    BEGIN TRY
+
+        -- 2a. Expirer les lignes modifiées (valid_to = veille source_date)
+        UPDATE d
+        SET
+            d.valid_to   = DATEADD(DAY, -1, c.source_date),
+            d.is_current = 0
+        FROM dbo.dim_customer d
+        INNER JOIN @changed c
+            ON c.old_sk = d.customer_sk;
+        -- SQL Server écrit automatiquement l'ancienne version
+        -- dans dim_customer_history (SYSTEM_VERSIONING)
+
+        -- 2b. Insérer les nouvelles versions (clients modifiés)
+        INSERT INTO dbo.dim_customer
+            (customer_id, customer_name, segment, region,
+             credit_limit, city, country,
+             valid_from, valid_to, is_current)
+        SELECT
+            s.customer_id, s.customer_name, s.segment, s.region,
+            s.credit_limit, s.city, s.country,
+            s.source_date, '9999-12-31', 1
+        FROM dbo.stg_customer_updates s
+        INNER JOIN @changed c
+            ON c.customer_id = s.customer_id
+        WHERE s.load_status = 'PENDING';
+
+        -- 2c. Insérer les nouveaux clients (1ère apparition)
+        INSERT INTO dbo.dim_customer
+            (customer_id, customer_name, segment, region,
+             credit_limit, city, country,
+             valid_from, valid_to, is_current)
+        SELECT
+            customer_id, customer_name, segment, region,
+            credit_limit, city, country,
+            source_date, '9999-12-31', 1
+        FROM @new_clients;
+
+        -- 2d. Log des changements dans scd2_audit_log
+        INSERT INTO dbo.scd2_audit_log
+            (customer_id, old_sk, new_sk, changed_cols,
+             old_segment, new_segment, old_region, new_region)
+        SELECT
+            c.customer_id,
+            c.old_sk,
+            d_new.customer_sk,
+            c.changed_cols,
+            c.old_segment, c.new_segment,
+            c.old_region,  c.new_region
+        FROM @changed c
+        INNER JOIN dbo.dim_customer d_new
+            ON  d_new.customer_id = c.customer_id
+            AND d_new.is_current  = 1;
+
+        -- 2e. Marquer le staging comme traité
+        UPDATE s
+        SET s.load_status = 'DONE'
+        FROM dbo.stg_customer_updates s
+        WHERE s.load_status = 'PENDING'
+          AND (
+                EXISTS (SELECT 1 FROM @changed    c WHERE c.customer_id = s.customer_id) OR
+                EXISTS (SELECT 1 FROM @new_clients n WHERE n.customer_id = s.customer_id)
+              );
+
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+
+END;
+
+EXEC dbo.usp_load_scd2_customer @run_date = '2023-01-01';
