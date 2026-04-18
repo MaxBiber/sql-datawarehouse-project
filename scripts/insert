@@ -7,3 +7,6 @@ VALUES
     (3, 'Gamma SAS',    'Standard', 'Est',   20000, 'Strasbourg',  'France', '2023-01-01'),
     (4, 'Delta & Co',   'Premium',  'Ouest', 75000, 'Nantes',      'France', '2023-01-01'),
     (5, 'Epsilon SAS',  'Standard', 'Sud',   18000, 'Lyon',        'France', '2023-01-01');
+
+
+EXEC dbo.usp_load_scd2_customer @run_date = '2023-01-01';
