@@ -1,1 +1,9 @@
-
+INSERT INTO dbo.stg_customer_updates
+    (customer_id, customer_name, segment, region,
+     credit_limit, city, country, source_date)
+VALUES
+    (1, 'Acme Corp',    'Standard', 'Nord',  50000, 'Lille',       'France', '2023-01-01'),
+    (2, 'Beta SARL',    'Standard', 'Sud',   15000, 'Marseille',   'France', '2023-01-01'),
+    (3, 'Gamma SAS',    'Standard', 'Est',   20000, 'Strasbourg',  'France', '2023-01-01'),
+    (4, 'Delta & Co',   'Premium',  'Ouest', 75000, 'Nantes',      'France', '2023-01-01'),
+    (5, 'Epsilon SAS',  'Standard', 'Sud',   18000, 'Lyon',        'France', '2023-01-01');
