@@ -10,3 +10,26 @@ VALUES
 
 
 EXEC dbo.usp_load_scd2_customer @run_date = '2023-01-01';
+INSERT INTO dbo.fact_orders
+    (order_id, customer_sk, order_date,
+     status, amount, product_category, payment_method, delivery_days)
+SELECT
+    t.order_id,
+    dc.customer_sk,
+    t.order_date,
+    t.status, t.amount, t.product_category,
+    t.payment_method, t.delivery_days
+FROM (
+    VALUES
+    (1001,1,'2023-03-15','Livré',   12500,'Électronique','Virement',3),
+    (1002,2,'2023-04-20','Livré',    3200,'Mobilier',    'Carte',    5),
+    (1003,3,'2023-06-10','Livré',    8900,'Électronique','Virement',2),
+    (1004,4,'2023-07-01','Livré',   22000,'Logiciels',   'Virement',1),
+    (1005,1,'2023-09-05','Livré',   18000,'Logiciels',   'Virement',1),
+    (1006,2,'2023-11-12','Annulé',   1500,'Mobilier',    'Carte',    0),
+    (1007,5,'2023-12-03','Livré',    6400,'Électronique','Carte',    4)
+) t(order_id, customer_id, order_date, status, amount,
+    product_category, payment_method, delivery_days)
+INNER JOIN dbo.dim_customer dc
+    ON  dc.customer_id = t.customer_id
+    AND t.order_date BETWEEN dc.valid_from AND dc.valid_to;
