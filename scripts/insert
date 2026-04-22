@@ -46,3 +46,22 @@ VALUES
     (6, 'Zeta Group', 'Premium', 'IDF', 90000, 'Paris',         'France', '2024-03-01');
 
 EXEC dbo.usp_load_scd2_customer @run_date = '2024-01-15';
+INSERT INTO dbo.fact_orders
+    (order_id, customer_sk, order_date,
+     status, amount, product_category, payment_method, delivery_days)
+SELECT
+    t.order_id, dc.customer_sk, t.order_date,
+    t.status, t.amount, t.product_category,
+    t.payment_method, t.delivery_days
+FROM (
+    VALUES
+    (2001,2,'2024-02-10','Livré',    9800,'Logiciels',   'Virement',2),
+    (2002,1,'2024-03-22','Livré',   14200,'Électronique','Virement',3),
+    (2003,6,'2024-04-05','Livré',   31000,'Logiciels',   'Virement',1),
+    (2004,3,'2024-05-18','Livré',    5500,'Mobilier',    'Carte',   6),
+    (2005,4,'2024-06-30','Livré',   28000,'Logiciels',   'Virement',1)
+) t(order_id, customer_id, order_date, status, amount,
+    product_category, payment_method, delivery_days)
+INNER JOIN dbo.dim_customer dc
+    ON  dc.customer_id = t.customer_id
+    AND t.order_date BETWEEN dc.valid_from AND dc.valid_to;
