@@ -1,0 +1,16 @@
+CREATE VIEW dbo.V_PBI_dim_custor_current as
+SELECT [customer_sk]
+      ,[customer_id]
+      ,[customer_name]
+      ,[segment]
+      ,[region]
+      ,[credit_limit]
+      ,[city]
+      ,[country]
+      ,[valid_from]
+      ,[valid_to]
+      ,[is_current]
+      ,[sys_start]
+      ,[sys_end]
+  FROM [SQL_DataWarehouse].[dbo].[dim_customer]
+  where is_current = 1
